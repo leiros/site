@@ -1,249 +1,37 @@
-<!doctype html>
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calculadora de Sub-rede IPv4</title>
-<style>
-  :root{--bg:#0f1724;--card:#0b1220;--accent:#0ea5e9;--muted:#94a3b8;--text:#e6eef6}
-  body{font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#071029,#071227);color:var(--text);margin:0;padding:20px;display:flex;justify-content:center}
-  .container{max-width:900px;width:100%;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:20px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
-  h1{margin:0 0 8px;font-size:20px}
-  p.lead{margin:0 0 18px;color:var(--muted)}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-  input,select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text);outline:none}
-  textarea{width:100%;height:120px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)}
-  .btn{display:inline-block;padding:10px 14px;border-radius:10px;background:var(--accent);color:#042033;border:none;cursor:pointer;font-weight:600}
-  .muted{color:var(--muted);font-size:13px}
-  .result{margin-top:16px;padding:12px;border-radius:8px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.06)}
-  .result-row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.02)}
-  .result-row:last-child{border-bottom:0}
-  .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; color:#dff6ff}
-  .full{grid-column:1 / -1}
-  @media (max-width:720px){.grid{grid-template-columns:1fr}.full{grid-column:auto}}
-  .small{font-size:13px}
-  .flex{display:flex;gap:8px;align-items:center}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+    <title>Leiros Stuff</title>
 </head>
 <body>
-  <div class="container" role="main">
-    <h1>Calculadora de Sub-rede IPv4</h1>
-    <p class="lead">Insira um IP IPv4 e máscara (CIDR ou dotted). Gera network, broadcast, hosts e mais.</p>
+    <header>
+        <nav id="navbar">
+            <i class="fa-solid fa-laptop-code" id="nav_logo">Portifolio</i>   
+            <ul#nav_list>
+                <li class="nav-time">
+                    <a href="#home">Início</a>
+                </li>
+                <li class="nav-time">
+                    <a href="https://www.submarinecablemap.com/">Mapa de Fibras Óticas</a>
+                </li>
+                <li class="nav-time">
+                    <a href="#sis">Outros Sisteminhas</a>
+                </li>
+            </ul>
+            <button class="btn_default">
+                botão
+            </button>
+            <button>
+                <i class="fa-solid fa-bars">
+                
+                </i>
+            </button>
+        </nav>
 
-    <div class="grid">
-      <div>
-        <label for="ip">Endereço IP</label>
-        <input id="ip" autocomplete="off" placeholder="ex.: 192.168.1.10" value="192.168.1.10">
-      </div>
+    </header>
 
-      <div>
-        <label for="mask">Máscara (CIDR ou dotted)</label>
-        <input id="mask" autocomplete="off" placeholder="ex.: /24 ou 255.255.255.0" value="/24">
-      </div>
-
-      <div class="full">
-        <label for="notes">Observações / entrada alternativa (opcional)</label>
-        <input id="notes" placeholder="ex.: 10.0.0.1 255.255.128.0" />
-      </div>
-
-      <div class="full flex">
-        <button id="calc" class="btn">Calcular</button>
-        <button id="clear" class="btn" style="background:#223344;color:var(--text)">Limpar</button>
-        <div style="margin-left:auto" class="muted small">Suporta apenas IPv4</div>
-      </div>
-    </div>
-
-    <div id="out" class="result" aria-live="polite" style="display:none">
-      <!-- resultados aparecem aqui -->
-    </div>
-
-    <details style="margin-top:12px;color:var(--muted)">
-      <summary style="cursor:pointer">Como funciona (curto)</summary>
-      <p class="muted small">O script converte IP e máscara para inteiro 32 bits, aplica operação bitwise para obter a network e broadcast e calcula hosts utilizáveis (2^hostBits - 2 quando aplicável).</p>
-    </details>
-  </div>
-
-<script>
-// === utilitários de IPv4 ===
-function ipToInt(ip) {
-  const parts = ip.trim().split('.');
-  if (parts.length !== 4) throw new Error('IP inválido');
-  return parts.reduce((acc,p)=> {
-    const n = Number(p);
-    if (!Number.isInteger(n) || n<0 || n>255) throw new Error('IP inválido');
-    return (acc<<8) + n;
-  }, 0) >>> 0;
-}
-function intToIp(int) {
-  int = int >>> 0;
-  return [ (int>>>24)&0xFF, (int>>>16)&0xFF, (int>>>8)&0xFF, int&0xFF ].join('.');
-}
-function cidrToMaskInt(cidr) {
-  if (cidr < 0 || cidr > 32) throw new Error('CIDR inválido');
-  return cidr === 0 ? 0 : (0xFFFFFFFF << (32 - cidr)) >>> 0;
-}
-function maskIntToCidr(maskInt) {
-  maskInt = maskInt >>> 0;
-  // conta bits 1
-  let c = 0;
-  for (let i=31;i>=0;i--) if ((maskInt>>>i)&1) c++; else break;
-  // valida máscara contínua
-  const expected = cidrToMaskInt(c);
-  if (expected !== maskInt) throw new Error('Máscara não é contínua');
-  return c;
-}
-function dottedMaskToInt(dotted) {
-  return ipToInt(dotted);
-}
-function wildcardFromMask(maskInt){ return (~maskInt)>>>0; }
-function toBinaryStr(int){ return (int>>>0).toString(2).padStart(32,'0').replace(/(.{8})/g,'$1 ').trim(); }
-
-// === parsing permissivo de máscara ===
-function parseMaskInput(txt){
-  txt = txt.trim();
-  if (!txt) throw new Error('Máscara vazia');
-  if (txt.startsWith('/')) {
-    const n = Number(txt.slice(1));
-    if (!Number.isInteger(n)) throw new Error('CIDR inválido');
-    return cidrToMaskInt(n);
-  }
-  // se for só número 24
-  if (/^\d{1,2}$/.test(txt)) {
-    return cidrToMaskInt(Number(txt));
-  }
-  // dotted
-  if (/^\d+\.\d+\.\d+\.\d+$/.test(txt)) {
-    const m = dottedMaskToInt(txt);
-    // valida contiguidade
-    try { maskIntToCidr(m); } catch(e){ throw new Error('Máscara dotted inválida ou não contínua'); }
-    return m;
-  }
-  throw new Error('Formato de máscara inválido');
-}
-
-// === cálculo principal ===
-function calcSubnet(ipStr, maskStr) {
-  const ipInt = ipToInt(ipStr);
-  const maskInt = parseMaskInput(maskStr);
-  const prefix = maskIntToCidr(maskInt);
-  const network = (ipInt & maskInt) >>> 0;
-  const broadcast = (network | (~maskInt)) >>> 0;
-  const wildcard = wildcardFromMask(maskInt);
-  const hostBits = 32 - prefix;
-  const totalHosts = hostBits === 0 ? 1 : Math.pow(2, hostBits);
-  const usableHosts = hostBits <=1 ? (hostBits===0?1:0) : totalHosts - 2;
-  const firstHost = (usableHosts === 0) ? null : (network + 1) >>> 0;
-  const lastHost = (usableHosts === 0) ? null : (broadcast - 1) >>> 0;
-
-  return {
-    ip: ipStr,
-    ipInt, ipBin: toBinaryStr(ipInt),
-    maskInt, maskDotted: intToIp(maskInt), maskBin: toBinaryStr(maskInt),
-    prefix,
-    network, networkDotted: intToIp(network), networkBin: toBinaryStr(network),
-    broadcast, broadcastDotted: intToIp(broadcast), broadcastBin: toBinaryStr(broadcast),
-    wildcard, wildcardDotted: intToIp(wildcard),
-    hostBits, totalHosts, usableHosts,
-    firstHost: firstHost === null ? null : intToIp(firstHost),
-    lastHost: lastHost === null ? null : intToIp(lastHost)
-  };
-}
-
-// === UI ===
-const ipInput = document.getElementById('ip');
-const maskInput = document.getElementById('mask');
-const notes = document.getElementById('notes');
-const calcBtn = document.getElementById('calc');
-const clearBtn = document.getElementById('clear');
-const out = document.getElementById('out');
-
-function showError(msg){
-  out.style.display='block';
-  out.innerHTML = `<div style="color:#ffb4b4;font-weight:700">Erro: ${msg}</div>`;
-}
-
-function showResult(r){
-  out.style.display='block';
-  out.innerHTML = `
-    <div class="result-row"><div class="muted">IP</div><div class="mono">${r.ip} (${r.ipInt})</div></div>
-    <div class="result-row"><div class="muted">Máscara</div><div class="mono">${r.maskDotted} /${r.prefix}</div></div>
-    <div class="result-row"><div class="muted">Wildcard</div><div class="mono">${r.wildcardDotted}</div></div>
-    <div class="result-row"><div class="muted">Network</div><div class="mono">${r.networkDotted}</div></div>
-    <div class="result-row"><div class="muted">Broadcast</div><div class="mono">${r.broadcastDotted}</div></div>
-    <div class="result-row"><div class="muted">Host bits / total / utilizáveis</div><div class="mono">${r.hostBits} / ${r.totalHosts} / ${r.usableHosts}</div></div>
-    <div class="result-row"><div class="muted">Primeiro host</div><div class="mono">${r.firstHost ?? '—'}</div></div>
-    <div class="result-row"><div class="muted">Último host</div><div class="mono">${r.lastHost ?? '—'}</div></div>
-    <div style="margin-top:8px;border-top:1px dashed rgba(255,255,255,0.04);padding-top:8px">
-      <div class="muted small">Representação binária (octetos)</div>
-      <pre class="mono" style="margin:6px 0;white-space:pre-wrap">${[
-        `IP:       ${r.ipBin}`,
-        `Máscara:  ${r.maskBin}`,
-        `Network:  ${r.networkBin}`,
-        `Broadcast:${r.broadcastBin}`
-      ].join('\n')}</pre>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="btn" id="copyTxt">Copiar resumo</button>
-        <button class="btn" id="downloadCsv" style="background:#1b6f5a">Download CSV</button>
-      </div>
-    </div>
-  `;
-  document.getElementById('copyTxt').addEventListener('click', ()=>{
-    const txt = [
-      `IP: ${r.ip}`,
-      `Máscara: ${r.maskDotted} /${r.prefix}`,
-      `Network: ${r.networkDotted}`,
-      `Broadcast: ${r.broadcastDotted}`,
-      `Hosts utilizáveis: ${r.usableHosts}`,
-      `Primeiro host: ${r.firstHost ?? '-'}`,
-      `Último host: ${r.lastHost ?? '-'}`,
-    ].join('\n');
-    navigator.clipboard?.writeText(txt).then(()=> alert('Resumo copiado!'), ()=> alert('Não foi possível copiar.'));
-  });
-  document.getElementById('downloadCsv').addEventListener('click', ()=>{
-    const csvRows = [
-      ['campo','valor'],
-      ['ip',r.ip],
-      ['mask',r.maskDotted],
-      ['prefix',r.prefix],
-      ['network',r.networkDotted],
-      ['broadcast',r.broadcastDotted],
-      ['firstHost',r.firstHost ?? ''],
-      ['lastHost',r.lastHost ?? ''],
-      ['usableHosts',r.usableHosts],
-    ];
-    const csv = csvRows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=url; a.download='subnet.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  });
-}
-
-calcBtn.addEventListener('click', ()=>{
-  out.style.display='none';
-  try {
-    // entrada preferencial: notes (se contiver 2 tokens) ou ip + mask
-    let ip = ipInput.value.trim();
-    let mask = maskInput.value.trim();
-    const n = notes.value.trim();
-    if (n){
-      const toks = n.split(/\s+/);
-      if (toks.length >= 2 && /^\d+\.\d+\.\d+\.\d+$/.test(toks[0])) {
-        ip = toks[0]; mask = toks.slice(1).join(' ');
-      }
-    }
-    const res = calcSubnet(ip, mask);
-    showResult(res);
-  } catch(e){
-    showError(e.message || String(e));
-  }
-});
-clearBtn.addEventListener('click', ()=>{
-  ipInput.value=''; maskInput.value=''; notes.value=''; out.style.display='none';
-});
-
-// habilita calcular ao pressionar Enter
-[ipInput, maskInput, notes].forEach(el => el.addEventListener('keydown', (ev)=>{ if(ev.key==='Enter'){ calcBtn.click(); ev.preventDefault(); }}));
-</script>
 </body>
 </html>
