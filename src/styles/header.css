@@ -3,7 +3,8 @@ header {
     padding: 28px 8%;
     position: sticky;
     top: 0;
-    background-color: var(--color-primary-1);
+    background: #06365E;
+background: linear-gradient(90deg, rgba(6, 54, 94, 1) 0%, rgba(0, 8, 38, 1) 50%, rgba(6, 54, 94, 1) 100%);
     z-index: 3;
 }
 
