@@ -1,5 +1,6 @@
 footer {
-    background-color: var(--color-primary-2);
+    background: #3c88c7;
+background: linear-gradient(90deg, rgba(60, 136, 199, 1) 0%, rgba(0, 8, 38, 1) 50%, rgba(60, 136, 199, 1) 100%);
 }
 
 #footer_items {
